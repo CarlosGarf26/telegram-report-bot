@@ -16,7 +16,7 @@ BOT_TOKEN = "8971854974:AAHvM7H08E3E23Df_hn-jo7MyGM_RMbahwQ"
 ZONA_HORARIA = pytz.timezone('America/Mexico_City')
 
 # LISTA DE GRUPOS AUTORIZADOS
-GRUPOS_REPORTE_IDS = [-1003967031204, -4531438172, -804848077, -1526410573] 
+GRUPOS_REPORTE_IDS = [-1003967031204, -4531438172, -804848077, -1526410573 ] 
 
 # 3. Diccionario con tus frases obligatorias
 DICCIONARIO_FRASES = {
@@ -33,7 +33,12 @@ DICCIONARIO_FRASES = {
     "adelante": [
         "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_7_2026-07-02_12-06-49.jpg"
     ],
+    # Mantienes la frase original
     "reporto salida de ": [
+        "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_9_2026-07-02_12-06-49.jpg"
+    ],
+    # AGREGAS LA NUEVA OPCIÓN APUNTANDO A LA MISMA IMAGEN
+    "me retiro de ": [
         "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_9_2026-07-02_12-06-49.jpg"
     ],
     "09:00 am": [
