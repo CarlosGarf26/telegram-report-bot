@@ -20,7 +20,8 @@ GRUPOS_REPORTE_IDS = [-1003967031204, -4531438172, -804848077, -1526410573, -512
 # 3. Diccionario con tus frases obligatorias
 DICCIONARIO_FRASES = {
     "llegada a sucursal": [
-        "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_3_2026-07-02_12-06-49.jpg"
+        "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_3_2026-07-02_12-06-49.jpg",
+        "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_2026-07-07_16-24-27.jpg"
     ],
     "santander": [
         "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_2_2026-07-02_12-06-49.jpg"
@@ -166,4 +167,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    
