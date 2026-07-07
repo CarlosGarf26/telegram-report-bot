@@ -32,7 +32,7 @@ DICCIONARIO_FRASES = {
     ],
     "adelante": [
         "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_7_2026-07-02_12-06-49.jpg",
-        "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/NOMBRECOMPLETO.jpg"
+        "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/NombreCompleto.jpg"
     ],
     # Mantienes la frase original
     "reporto salida de ": [
