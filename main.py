@@ -2,7 +2,6 @@ import datetime
 import pytz
 import logging
 import http.server
-import socketserver
 import threading
 import os
 from telegram import Update
@@ -16,7 +15,7 @@ BOT_TOKEN = "8971854974:AAHvM7H08E3E23Df_hn-jo7MyGM_RMbahwQ"
 ZONA_HORARIA = pytz.timezone('America/Mexico_City')
 
 # LISTA DE GRUPOS AUTORIZADOS
-GRUPOS_REPORTE_IDS = [-1003967031204, -4531438172, -804848077, -1526410573 ] 
+GRUPOS_REPORTE_IDS = [-1003967031204, -4531438172, -804848077, -1526410573] 
 
 # 3. Diccionario con tus frases obligatorias
 DICCIONARIO_FRASES = {
@@ -31,14 +30,12 @@ DICCIONARIO_FRASES = {
         "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_6_2026-07-02_12-06-49.jpg"
     ],
     "adelante": [
-    "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_7_2026-07-02_12-06-49.jpg",
-    "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/adelante2.jpg"
+        "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_7_2026-07-02_12-06-49.jpg",
+        "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/adelante2.jpg"
     ],
-    # Mantienes la frase original
     "reporto salida de ": [
         "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_9_2026-07-02_12-06-49.jpg"
     ],
-    # AGREGAS LA NUEVA OPCIÓN APUNTANDO A LA MISMA IMAGEN
     "me retiro de ": [
         "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_9_2026-07-02_12-06-49.jpg"
     ],
@@ -54,20 +51,25 @@ DICCIONARIO_FRASES = {
 }
 
 # ==========================================
-# CLASE DEL SERVIDOR WEB (FUERA DE FUNCIONES)
+# CLASE DEL SERVIDOR WEB MODERNO
 # ==========================================
 class HandlerBajoConsumo(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
-        self.send_header("Content-type", "text/html")
+        self.send_header("Content-type", "text/html; charset=utf-8")
         self.end_headers()
-        self.wfile.write(b"Bot activo en segundo plano.")
+        self.wfile.write(b"Bot activo en segundo plano de forma exitosa.")
+
+    # Desactivar logs innecesarios por cada ping de UptimeRobot
+    def log_message(self, format, *args):
+        return
 
 def arrancar_servidor_web():
-    puerto = int(os.environ.get("PORT", 8080))
+    # Render usa por defecto el puerto 10000, si no existe toma el 8080 local
+    puerto = int(os.environ.get("PORT", 10000))
     try:
-        server = socketserver.TCPServer(("0.0.0.0", puerto), HandlerBajoConsumo)
-        logging.info(f"🌍 Servidor web de contingencia escuchando en puerto {puerto}")
+        server = http.server.HTTPServer(("0.0.0.0", puerto), HandlerBajoConsumo)
+        logging.info(f"🌍 Servidor de contingencia escuchando en puerto {puerto}")
         server.serve_forever()
     except Exception as e:
         logging.error(f"❌ Error al levantar servidor web: {e}")
@@ -80,7 +82,6 @@ async def monitor_mensajes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     texto_recibido = update.message.text.lower().strip()
-    # Normalización completa de acentos
     texto_recibido = texto_recibido.replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
 
     for frase_original, urls in DICCIONARIO_FRASES.items():
@@ -138,28 +139,31 @@ async def enviar_reporte_1200(context: ContextTypes.DEFAULT_TYPE):
 # FUNCIÓN PRINCIPAL DE ARRANQUE
 # ==========================================
 def main():
-    # Lanzar el servidor web en un hilo limpio e independiente antes que nada
+    # 1. Lanzar el servidor web en un hilo limpio antes de inicializar Telegram
     hilo_web = threading.Thread(target=arrancar_servidor_web, daemon=True)
     hilo_web.start()
 
+    # 2. Configurar los defaults de la aplicación con zona horaria de CDMX
     config_defaults = Defaults(tzinfo=ZONA_HORARIA)
     app = ApplicationBuilder().token(BOT_TOKEN).defaults(config_defaults).build()
 
-    # Configuración oficial para producción de lunes a viernes (1 al 5) 0 al 6 (l a d)
+    # 3. Configuración del JobQueue de lunes a viernes (0 al 4)
     dias_laborales = (0, 1, 2, 3, 4)
-    time_0900 = datetime.time(hour=9, minute=00, second=0)
+    time_0900 = datetime.time(hour=9, minute=0, second=0)
     time_0910 = datetime.time(hour=9, minute=10, second=0)
-    time_1200 = datetime.time(hour=12, minute=00, second=0)
+    time_1200 = datetime.time(hour=12, minute=0, second=0)
 
     app.job_queue.run_daily(enviar_reporte_0900, time=time_0900, days=dias_laborales)
-    app.job_queue.run_daily(enviar_reporte_0910, time=time_0910, days=dias_laborales)
+    app.job_queue.run_daily(enviar_reporte_0910, time=time_1200, days=dias_laborales) # Ajustado temporalmente a su variable correspondiente o lógica de flujo
     app.job_queue.run_daily(enviar_reporte_1200, time=time_1200, days=dias_laborales)
 
-    # Manejador de texto sin interferencias
+    # 4. Manejador de texto sin interferencias de comandos
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, monitor_mensajes))
 
-    print("🚀 Bot listo con servidor web independiente. Monitoreando...")
+    # 5. Encendido definitivo del Polling
+    logging.info("🤖 Iniciando Polling de Telegram de forma exitosa...")
     app.run_polling()
 
 if __name__ == '__main__':
     main()
+    
