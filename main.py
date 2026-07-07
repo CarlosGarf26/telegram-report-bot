@@ -31,7 +31,8 @@ DICCIONARIO_FRASES = {
         "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_6_2026-07-02_12-06-49.jpg"
     ],
     "adelante": [
-        "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_7_2026-07-02_12-06-49.jpg"
+        "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_7_2026-07-02_12-06-49.jpg",
+        "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/NOMBRECOMPLETO.jpg"
     ],
     # Mantienes la frase original
     "reporto salida de ": [
