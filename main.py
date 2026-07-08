@@ -61,12 +61,10 @@ class HandlerBajoConsumo(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b"Bot activo en segundo plano de forma exitosa.")
 
-    # Desactivar logs innecesarios por cada ping de UptimeRobot
     def log_message(self, format, *args):
         return
 
 def arrancar_servidor_web():
-    # Render usa por defecto el puerto 10000, si no existe toma el 8080 local
     puerto = int(os.environ.get("PORT", 10000))
     try:
         server = http.server.HTTPServer(("0.0.0.0", puerto), HandlerBajoConsumo)
@@ -155,7 +153,7 @@ def main():
     time_1200 = datetime.time(hour=12, minute=0, second=0)
 
     app.job_queue.run_daily(enviar_reporte_0900, time=time_0900, days=dias_laborales)
-    app.job_queue.run_daily(enviar_reporte_0910, time=time_1200, days=dias_laborales) # Ajustado temporalmente a su variable correspondiente o lógica de flujo
+    app.job_queue.run_daily(enviar_reporte_0910, time=time_0910, days=dias_laborales) # <-- CORREGIDO: Usaba time_1200
     app.job_queue.run_daily(enviar_reporte_1200, time=time_1200, days=dias_laborales)
 
     # 4. Manejador de texto sin interferencias de comandos
