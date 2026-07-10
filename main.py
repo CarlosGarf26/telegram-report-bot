@@ -156,9 +156,12 @@ def main():
     time_0910 = datetime.time(hour=9, minute=10, second=0)
     time_1200 = datetime.time(hour=12, minute=0, second=0)
 
-    app.job_queue.run_daily(enviar_reporte_0900, time=time_0900, days=dias_laborales)
-    app.job_queue.run_daily(enviar_reporte_0910, time=time_0910, days=dias_laborales)
-    app.job_queue.run_daily(enviar_reporte_1200, time=time_1200, days=dias_laborales)
+    # BLINDAJE CONTRA RETRASOS: Se agrega una tolerancia de 60 segundos por si el servidor se retrasa
+    config_tolerancia = {"misfire_grace_time": 60}
+
+    app.job_queue.run_daily(enviar_reporte_0900, time=time_0900, days=dias_laborales, job_kwargs=config_tolerancia)
+    app.job_queue.run_daily(enviar_reporte_0910, time=time_0910, days=dias_laborales, job_kwargs=config_tolerancia)
+    app.job_queue.run_daily(enviar_reporte_1200, time=time_1200, days=dias_laborales, job_kwargs=config_tolerancia)
 
     # 4. Manejador de texto sin interferencias de comandos
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, monitor_mensajes))
