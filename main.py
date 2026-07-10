@@ -155,12 +155,12 @@ def main():
     app = ApplicationBuilder().token(BOT_TOKEN).defaults(config_defaults).build()
 
     # 3. Configuración del JobQueue de lunes a viernes (0 al 4)
-    dias_laborales = (0, 1, 2, 3, 4)
+    dias_laborales = (0, 1, 2, 3, 4, 5)
     
     # NUEVOS HORARIOS SOLICITADOS (14:40, 14:41, 14:42)
-    time_prueba1 = datetime.time(hour=14, minute=40, second=0)
-    time_prueba2 = datetime.time(hour=14, minute=41, second=0)
-    time_prueba3 = datetime.time(hour=14, minute=42, second=0)
+    time_prueba1 = datetime.time(hour=14, minute=43, second=0)
+    time_prueba2 = datetime.time(hour=14, minute=44, second=0)
+    time_prueba3 = datetime.time(hour=14, minute=45, second=0)
 
     config_tolerancia = {"misfire_grace_time": 60}
 
