@@ -101,9 +101,15 @@ async def monitor_mensajes(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
 # ==========================================
-# LÓGICA 2: ENVÍOS AUTOMÁTICOS PROGRAMADOS
+# LÓGICA 2: ENVÍOS AUTOMÁTICOS PROGRAMADOS (LUNES A VIERNES)
 # ==========================================
 async def enviar_reporte_0900(context: ContextTypes.DEFAULT_TYPE):
+    # Candado definitivo: 0=Lunes, 4=Viernes, 5=Sábado, 6=Domingo
+    dia_actual = datetime.datetime.now(ZONA_HORARIA).weekday()
+    if dia_actual > 4:
+        logging.info("🛡️ Candado activado: Bloqueando envío programado por ser fin de semana.")
+        return
+
     for chat_id_actual in GRUPOS_REPORTE_IDS:
         try:
             await context.bot.send_photo(
@@ -112,11 +118,16 @@ async def enviar_reporte_0900(context: ContextTypes.DEFAULT_TYPE):
                 caption="📢 **Que tengas un excelente turno**",
                 parse_mode="Markdown"
             )
-            await asyncio.sleep(1.5)
+            await asyncio.sleep(1.5)  # Pausa anti-bloqueo
         except Exception as e:
             logging.error(f"❌ ERROR EN GRUPO {chat_id_actual}: {e}")
 
 async def enviar_reporte_0910(context: ContextTypes.DEFAULT_TYPE):
+    dia_actual = datetime.datetime.now(ZONA_HORARIA).weekday()
+    if dia_actual > 4:
+        logging.info("🛡️ Candado activado: Bloqueando envío programado por ser fin de semana.")
+        return
+
     for chat_id_actual in GRUPOS_REPORTE_IDS:
         try:
             await context.bot.send_photo(
@@ -130,6 +141,11 @@ async def enviar_reporte_0910(context: ContextTypes.DEFAULT_TYPE):
             logging.error(f"❌ ERROR EN GRUPO {chat_id_actual}: {e}")
 
 async def enviar_reporte_1200(context: ContextTypes.DEFAULT_TYPE):
+    dia_actual = datetime.datetime.now(ZONA_HORARIA).weekday()
+    if dia_actual > 4:
+        logging.info("🛡️ Candado activado: Bloqueando envío programado por ser fin de semana.")
+        return
+
     for chat_id_actual in GRUPOS_REPORTE_IDS:
         try:
             await context.bot.send_photo(
@@ -155,25 +171,26 @@ def main():
     app = ApplicationBuilder().token(BOT_TOKEN).defaults(config_defaults).build()
 
     # 3. Configuración del JobQueue de lunes a viernes (0 al 4)
-    dias_laborales = (0, 1, 2, 3, 4, 5)
+    dias_laborales = (0, 1, 2, 3, 4)
     
-    # NUEVOS HORARIOS SOLICITADOS (14:40, 14:41, 14:42)
-    time_prueba1 = datetime.time(hour=14, minute=43, second=0)
-    time_prueba2 = datetime.time(hour=14, minute=44, second=0)
-    time_prueba3 = datetime.time(hour=14, minute=45, second=0)
+    # Horarios de producción oficiales restablecidos
+    time_0900 = datetime.time(hour=9, minute=0, second=0)
+    time_0910 = datetime.time(hour=9, minute=10, second=0)
+    time_1200 = datetime.time(hour=12, minute=0, second=0)
 
-    config_tolerancia = {"misfire_grace_time": 60}
+    # Tolerancia estricta de 10 segundos para no arrastrar ejecuciones pasadas
+    config_tolerancia = {"misfire_grace_time": 10}
 
-    # Registro de la cola de tareas diarias
-    app.job_queue.run_daily(enviar_reporte_0900, time=time_prueba1, days=dias_laborales, job_kwargs=config_tolerancia)
-    app.job_queue.run_daily(enviar_reporte_0910, time=time_prueba2, days=dias_laborales, job_kwargs=config_tolerancia)
-    app.job_queue.run_daily(enviar_reporte_1200, time=time_prueba3, days=dias_laborales, job_kwargs=config_tolerancia)
+    # Registro final en el JobQueue
+    app.job_queue.run_daily(enviar_reporte_0900, time=time_0900, days=dias_laborales, job_kwargs=config_tolerancia)
+    app.job_queue.run_daily(enviar_reporte_0910, time=time_0910, days=dias_laborales, job_kwargs=config_tolerancia)
+    app.job_queue.run_daily(enviar_reporte_1200, time=time_1200, days=dias_laborales, job_kwargs=config_tolerancia)
 
     # 4. Manejador de texto sin interferencias de comandos
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, monitor_mensajes))
 
     # 5. Encendido definitivo del Polling
-    logging.info("🤖 Iniciando Polling de Telegram de forma exitosa...")
+    logging.info("🤖 Iniciando Polling de Telegram blindado de lunes a viernes...")
     app.run_polling()
 
 if __name__ == '__main__':
