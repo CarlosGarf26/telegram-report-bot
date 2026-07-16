@@ -4,7 +4,7 @@ import logging
 import http.server
 import threading
 import os
-import asyncio  # <-- Importante para manejar las pausas de envío
+import asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes, Defaults
 
@@ -16,15 +16,11 @@ BOT_TOKEN = "8971854974:AAHvM7H08E3E23Df_hn-jo7MyGM_RMbahwQ"
 ZONA_HORARIA = pytz.timezone('America/Mexico_City')
 
 # LISTA DE GRUPOS AUTORIZADOS (11 IDs)
-GRUPOS_REPORTE_IDS = [-1003967031204, -4531438172, -804848077, -1526410573, -5121107658, -4967561577, -4021483068, -4066598135, -867815276, -5126666888, -5173573157] 
+GRUPOS_REPORTE_IDS = [-1003967031204, -4531438172, -804848077, -1526410573, -5121107658, -4967561577, -4021483068, -4066598135, -867815276, -5126666888, -5173573157, -1775181484] 
 
 # 3. Diccionario con tus frases obligatorias
 DICCIONARIO_FRASES = {
     "llegada a sucursal": [
-        "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_3_2026-07-02_12-06-49.jpg",
-        "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_2026-07-07_16-24-27.jpg"
-    ],
-     "llegada a la sucursal": [
         "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_3_2026-07-02_12-06-49.jpg",
         "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_2026-07-07_16-24-27.jpg"
     ],
@@ -83,7 +79,7 @@ def arrancar_servidor_web():
         logging.error(f"❌ Error al levantar servidor web: {e}")
 
 # ==========================================
-# LÓGICA 1: ESCUCHAR FRASES OBLIGATORIAS
+# LÓGICA 1: ESCUCHAR FRASES OBLIGATORIAS (CORREGIDA A COINCIDENCIA EXACTA)
 # ==========================================
 async def monitor_mensajes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
@@ -95,8 +91,9 @@ async def monitor_mensajes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for frase_original, urls in DICCIONARIO_FRASES.items():
         frase_normalizada = frase_original.lower().strip().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
         
-        if frase_normalizada in texto_recibido:
-            logging.info(f"🎯 Frase detectada con éxito: '{frase_original}'")
+        # MODIFICACIÓN CRÍTICA: Cambiamos 'in' por '==' para exigir que el texto sea idéntico
+        if texto_recibido == frase_normalizada:
+            logging.info(f"🎯 Frase exacta detectada con éxito: '{frase_original}'")
             for url_imagen in urls:
                 try:
                     await context.bot.send_photo(chat_id=update.effective_chat.id, photo=url_imagen)
@@ -108,10 +105,9 @@ async def monitor_mensajes(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # LÓGICA 2: ENVÍOS AUTOMÁTICOS PROGRAMADOS (LUNES A VIERNES)
 # ==========================================
 async def enviar_reporte_0900(context: ContextTypes.DEFAULT_TYPE):
-    # Candado definitivo: 0=Lunes, 4=Viernes, 5=Sábado, 6=Domingo
     dia_actual = datetime.datetime.now(ZONA_HORARIA).weekday()
     if dia_actual > 4:
-        logging.info("🛡️ Candado activado: Bloqueando envío programado por ser fin de semana.")
+        logging.info("🛡️ Candado activado: Bloqueando envío por ser fin de semana.")
         return
 
     for chat_id_actual in GRUPOS_REPORTE_IDS:
@@ -122,14 +118,14 @@ async def enviar_reporte_0900(context: ContextTypes.DEFAULT_TYPE):
                 caption="📢 **Que tengas un excelente turno**",
                 parse_mode="Markdown"
             )
-            await asyncio.sleep(1.5)  # Pausa anti-bloqueo
+            await asyncio.sleep(1.5)
         except Exception as e:
             logging.error(f"❌ ERROR EN GRUPO {chat_id_actual}: {e}")
 
 async def enviar_reporte_0910(context: ContextTypes.DEFAULT_TYPE):
     dia_actual = datetime.datetime.now(ZONA_HORARIA).weekday()
     if dia_actual > 4:
-        logging.info("🛡️ Candado activado: Bloqueando envío programado por ser fin de semana.")
+        logging.info("🛡️ Candado activado: Bloqueando envío por ser fin de semana.")
         return
 
     for chat_id_actual in GRUPOS_REPORTE_IDS:
@@ -147,7 +143,7 @@ async def enviar_reporte_0910(context: ContextTypes.DEFAULT_TYPE):
 async def enviar_reporte_1200(context: ContextTypes.DEFAULT_TYPE):
     dia_actual = datetime.datetime.now(ZONA_HORARIA).weekday()
     if dia_actual > 4:
-        logging.info("🛡️ Candado activado: Bloqueando envío programado por ser fin de semana.")
+        logging.info("🛡️ Candado activado: Bloqueando envío por ser fin de semana.")
         return
 
     for chat_id_actual in GRUPOS_REPORTE_IDS:
@@ -166,35 +162,27 @@ async def enviar_reporte_1200(context: ContextTypes.DEFAULT_TYPE):
 # FUNCIÓN PRINCIPAL DE ARRANQUE
 # ==========================================
 def main():
-    # 1. Lanzar el servidor web en un hilo limpio antes de inicializar Telegram
     hilo_web = threading.Thread(target=arrancar_servidor_web, daemon=True)
     hilo_web.start()
 
-    # 2. Configurar los defaults de la aplicación con zona horaria de CDMX
     config_defaults = Defaults(tzinfo=ZONA_HORARIA)
     app = ApplicationBuilder().token(BOT_TOKEN).defaults(config_defaults).build()
 
-    # 3. Configuración del JobQueue de lunes a viernes (0 al 4)
     dias_laborales = (0, 1, 2, 3, 4)
     
-    # Horarios de producción oficiales restablecidos
-    time_0900 = datetime.time(hour=9, minute=0, second=0)
-    time_0910 = datetime.time(hour=9, minute=10, second=0)
-    time_1200 = datetime.time(hour=12, minute=0, second=0)
+    time_0900 = datetime.time(hour=9, minute=0, second=0, tzinfo=ZONA_HORARIA)
+    time_0910 = datetime.time(hour=9, minute=10, second=0, tzinfo=ZONA_HORARIA)
+    time_1200 = datetime.time(hour=12, minute=0, second=0, tzinfo=ZONA_HORARIA)
 
-    # Tolerancia estricta de 10 segundos para no arrastrar ejecuciones pasadas
-    config_tolerancia = {"misfire_grace_time": 10}
+    config_tolerancia = {"misfire_grace_time": 300}
 
-    # Registro final en el JobQueue
     app.job_queue.run_daily(enviar_reporte_0900, time=time_0900, days=dias_laborales, job_kwargs=config_tolerancia)
     app.job_queue.run_daily(enviar_reporte_0910, time=time_0910, days=dias_laborales, job_kwargs=config_tolerancia)
     app.job_queue.run_daily(enviar_reporte_1200, time=time_1200, days=dias_laborales, job_kwargs=config_tolerancia)
 
-    # 4. Manejador de texto sin interferencias de comandos
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, monitor_mensajes))
 
-    # 5. Encendido definitivo del Polling
-    logging.info("🤖 Iniciando Polling de Telegram blindado de lunes a viernes...")
+    logging.info("🤖 Iniciando Polling con sincronización horaria absoluta...")
     app.run_polling()
 
 if __name__ == '__main__':
