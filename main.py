@@ -24,6 +24,10 @@ DICCIONARIO_FRASES = {
         "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_3_2026-07-02_12-06-49.jpg",
         "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_2026-07-07_16-24-27.jpg"
     ],
+     "llegada a la sucursal": [
+        "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_3_2026-07-02_12-06-49.jpg",
+        "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_2026-07-07_16-24-27.jpg"
+    ],
     "llegando a sucursal": [
         "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_3_2026-07-02_12-06-49.jpg",
         "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_2026-07-07_16-24-27.jpg"
