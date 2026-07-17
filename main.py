@@ -79,7 +79,7 @@ def arrancar_servidor_web():
         logging.error(f"❌ Error al levantar servidor web: {e}")
 
 # ==========================================
-# LÓGICA 1: ESCUCHAR FRASES OBLIGATORIAS
+# LÓGICA 1: ESCUCHAR FRASES OBLIGATORIAS (Detección Flexible)
 # ==========================================
 async def monitor_mensajes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
@@ -91,8 +91,9 @@ async def monitor_mensajes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for frase_original, urls in DICCIONARIO_FRASES.items():
         frase_normalizada = frase_original.lower().strip().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
         
-        if texto_recibido == frase_normalizada:
-            logging.info(f"🎯 Frase exacta detectada con éxito: '{frase_original}'")
+        # AJUSTE INTELIGENTE: Evalúa si la frase clave completa viene adentro del mensaje enviado
+        if frase_normalizada in texto_recibido:
+            logging.info(f"🎯 Frase detectada en el texto: '{frase_original}'")
             for url_imagen in urls:
                 try:
                     await context.bot.send_photo(chat_id=update.effective_chat.id, photo=url_imagen)
@@ -164,15 +165,14 @@ def main():
     hilo_web = threading.Thread(target=arrancar_servidor_web, daemon=True)
     hilo_web.start()
 
-    # CORRECCIÓN CLAVE: Inyectamos explícitamente los valores de la zona horaria a la app base
     config_defaults = Defaults(tzinfo=ZONA_HORARIA)
     app = ApplicationBuilder().token(BOT_TOKEN).defaults(config_defaults).build()
 
     dias_laborales = (0, 1, 2, 3, 4)
     
-    # Asignamos de forma nativa la zona horaria en cada objeto datetime.time
-    time_0900 = datetime.time(hour=9, minute=11, second=0, tzinfo=ZONA_HORARIA)
-    time_0910 = datetime.time(hour=9, minute=12, second=0, tzinfo=ZONA_HORARIA)
+    # HORARIOS OFICIALES DE PRODUCCIÓN (Restablecidos a minuto 0 y minuto 10)
+    time_0900 = datetime.time(hour=9, minute=0, second=0, tzinfo=ZONA_HORARIA)
+    time_0910 = datetime.time(hour=9, minute=10, second=0, tzinfo=ZONA_HORARIA)
     time_1200 = datetime.time(hour=12, minute=0, second=0, tzinfo=ZONA_HORARIA)
 
     # Dejamos un margen saludable de 5 minutos por la carga compartida de CPU en Render
