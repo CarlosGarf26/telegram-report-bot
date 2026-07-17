@@ -15,7 +15,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 BOT_TOKEN = "8971854974:AAHvM7H08E3E23Df_hn-jo7MyGM_RMbahwQ"
 ZONA_HORARIA = pytz.timezone('America/Mexico_City')
 
-# LISTA DE GRUPOS AUTORIZADOS (11 IDs)
+# LISTA DE GRUPOS AUTORIZADOS (12 IDs actualizados)
 GRUPOS_REPORTE_IDS = [-1003967031204, -4531438172, -804848077, -1526410573, -5121107658, -4967561577, -4021483068, -4066598135, -867815276, -5126666888, -5173573157, -1775181484] 
 
 # 3. Diccionario con tus frases obligatorias
@@ -79,7 +79,7 @@ def arrancar_servidor_web():
         logging.error(f"❌ Error al levantar servidor web: {e}")
 
 # ==========================================
-# LÓGICA 1: ESCUCHAR FRASES OBLIGATORIAS (CORREGIDA A COINCIDENCIA EXACTA)
+# LÓGICA 1: ESCUCHAR FRASES OBLIGATORIAS
 # ==========================================
 async def monitor_mensajes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
@@ -91,7 +91,6 @@ async def monitor_mensajes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for frase_original, urls in DICCIONARIO_FRASES.items():
         frase_normalizada = frase_original.lower().strip().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
         
-        # MODIFICACIÓN CRÍTICA: Cambiamos 'in' por '==' para exigir que el texto sea idéntico
         if texto_recibido == frase_normalizada:
             logging.info(f"🎯 Frase exacta detectada con éxito: '{frase_original}'")
             for url_imagen in urls:
@@ -165,17 +164,21 @@ def main():
     hilo_web = threading.Thread(target=arrancar_servidor_web, daemon=True)
     hilo_web.start()
 
+    # CORRECCIÓN CLAVE: Inyectamos explícitamente los valores de la zona horaria a la app base
     config_defaults = Defaults(tzinfo=ZONA_HORARIA)
     app = ApplicationBuilder().token(BOT_TOKEN).defaults(config_defaults).build()
 
     dias_laborales = (0, 1, 2, 3, 4)
     
-    time_0900 = datetime.time(hour=9, minute=0, second=0, tzinfo=ZONA_HORARIA)
-    time_0910 = datetime.time(hour=9, minute=10, second=0, tzinfo=ZONA_HORARIA)
+    # Asignamos de forma nativa la zona horaria en cada objeto datetime.time
+    time_0900 = datetime.time(hour=9, minute=11, second=0, tzinfo=ZONA_HORARIA)
+    time_0910 = datetime.time(hour=9, minute=12, second=0, tzinfo=ZONA_HORARIA)
     time_1200 = datetime.time(hour=12, minute=0, second=0, tzinfo=ZONA_HORARIA)
 
+    # Dejamos un margen saludable de 5 minutos por la carga compartida de CPU en Render
     config_tolerancia = {"misfire_grace_time": 300}
 
+    # Registro final sincronizado de las tareas diarias en el JobQueue
     app.job_queue.run_daily(enviar_reporte_0900, time=time_0900, days=dias_laborales, job_kwargs=config_tolerancia)
     app.job_queue.run_daily(enviar_reporte_0910, time=time_0910, days=dias_laborales, job_kwargs=config_tolerancia)
     app.job_queue.run_daily(enviar_reporte_1200, time=time_1200, days=dias_laborales, job_kwargs=config_tolerancia)
