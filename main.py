@@ -165,20 +165,21 @@ def main():
     hilo_web = threading.Thread(target=arrancar_servidor_web, daemon=True)
     hilo_web.start()
 
+    # 1. Aplicamos la zona horaria de forma GLOBAL a todo el bot.
     config_defaults = Defaults(tzinfo=ZONA_HORARIA)
     app = ApplicationBuilder().token(BOT_TOKEN).defaults(config_defaults).build()
 
     dias_laborales = (0, 1, 2, 3, 4)
     
-    # HORARIOS OFICIALES DE PRODUCCIÓN (Restablecidos a minuto 0 y minuto 10)
-    time_0900 = datetime.time(hour=9, minute=0, second=0, tzinfo=ZONA_HORARIA)
-    time_0910 = datetime.time(hour=9, minute=10, second=0, tzinfo=ZONA_HORARIA)
-    time_1200 = datetime.time(hour=12, minute=0, second=0, tzinfo=ZONA_HORARIA)
+    # 2. SOLUCIÓN AL BUG: Declaramos horas limpias sin tzinfo para que hereden el config_defaults correctamente
+    time_0900 = datetime.time(hour=9, minute=0, second=0)
+    time_0910 = datetime.time(hour=9, minute=10, second=0)
+    time_1200 = datetime.time(hour=12, minute=0, second=0)
 
-    # Dejamos un margen saludable de 5 minutos por la carga compartida de CPU en Render
+    # Dejamos el margen saludable de 5 minutos por la carga compartida de CPU en Render
     config_tolerancia = {"misfire_grace_time": 300}
 
-    # Registro final sincronizado de las tareas diarias en el JobQueue
+    # Registro final de las tareas diarias en el JobQueue
     app.job_queue.run_daily(enviar_reporte_0900, time=time_0900, days=dias_laborales, job_kwargs=config_tolerancia)
     app.job_queue.run_daily(enviar_reporte_0910, time=time_0910, days=dias_laborales, job_kwargs=config_tolerancia)
     app.job_queue.run_daily(enviar_reporte_1200, time=time_1200, days=dias_laborales, job_kwargs=config_tolerancia)
