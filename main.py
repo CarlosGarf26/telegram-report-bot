@@ -18,6 +18,12 @@ ZONA_HORARIA = pytz.timezone('America/Mexico_City')
 # LISTA DE GRUPOS AUTORIZADOS (12 IDs actualizados)
 GRUPOS_REPORTE_IDS = [-1003967031204, -4531438172, -804848077, -1526410573, -5121107658, -4967561577, -4021483068, -4066598135, -867815276, -5126666888, -5173573157, -1775181484] 
 
+# ID ESPECIAL CON LÍMITE DE UN ENVÍO AL DÍA
+ID_LIMITADO = -4030049034
+
+# Registro en memoria para el grupo limitado
+REGISTRO_ENVIOS_DIARIOS = set()
+
 # 3. Diccionario con tus frases obligatorias
 DICCIONARIO_FRASES = {
     "llegada a sucursal": [
@@ -43,6 +49,9 @@ DICCIONARIO_FRASES = {
         "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_9_2026-07-02_12-06-49.jpg"
     ],
     "me retiro de ": [
+        "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_9_2026-07-02_12-06-49.jpg"
+    ],
+    "salida de sucursal": [
         "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_9_2026-07-02_12-06-49.jpg"
     ],
     "09:00 am": [
@@ -85,6 +94,7 @@ async def monitor_mensajes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
 
+    chat_id = update.effective_chat.id
     texto_recibido = update.message.text.lower().strip()
     texto_recibido = texto_recibido.replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
 
@@ -92,10 +102,19 @@ async def monitor_mensajes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         frase_normalizada = frase_original.lower().strip().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
         
         if frase_normalizada in texto_recibido:
-            logging.info(f"🎯 Frase detectada en el texto: '{frase_original}'")
+            # 🛡️ FILTRO DE LÍMITE DIARIO PARA EL ID ESPECIAL
+            if chat_id == ID_LIMITADO:
+                fecha_hoy = datetime.datetime.now(ZONA_HORARIA).strftime("%Y-%m-%d")
+                if fecha_hoy in REGISTRO_ENVIOS_DIARIOS:
+                    logging.info(f"🔒 Bloqueado: El grupo especial {ID_LIMITADO} ya usó su envío del día ({fecha_hoy}).")
+                    return
+                else:
+                    REGISTRO_ENVIOS_DIARIOS.add(fecha_hoy)
+
+            logging.info(f"🎯 Frase detectada en chat {chat_id}: '{frase_original}'")
             for url_imagen in urls:
                 try:
-                    await context.bot.send_photo(chat_id=update.effective_chat.id, photo=url_imagen)
+                    await context.bot.send_photo(chat_id=chat_id, photo=url_imagen)
                 except Exception as e:
                     logging.error(f"❌ Error al enviar imagen por frase clave: {e}")
             return
@@ -169,16 +188,16 @@ def main():
 
     todos_los_dias = (0, 1, 2, 3, 4, 5, 6)
     
-    # VARIABLES CORREGIDAS PARA LA PRUEBA (09:20, 09:24, 12:00)
-    time_0920 = datetime.time(hour=9, minute=20, second=0)
-    time_0924 = datetime.time(hour=9, minute=24, second=0)
+    # HORARIOS OFICIALES RESTABLECIDOS (09:00, 09:10, 12:00)
+    time_0900 = datetime.time(hour=9, minute=0, second=0)
+    time_0910 = datetime.time(hour=9, minute=10, second=0)
     time_1200 = datetime.time(hour=12, minute=0, second=0)
 
     config_tolerancia = {"misfire_grace_time": 300}
 
-    # Registro en la cola de tareas diarias con coincidencia exacta de nombres
-    app.job_queue.run_daily(enviar_reporte_0900, time=time_0920, days=todos_los_dias, job_kwargs=config_tolerancia)
-    app.job_queue.run_daily(enviar_reporte_0910, time=time_0924, days=todos_los_dias, job_kwargs=config_tolerancia)
+    # Registro en la cola de tareas diarias
+    app.job_queue.run_daily(enviar_reporte_0900, time=time_0900, days=todos_los_dias, job_kwargs=config_tolerancia)
+    app.job_queue.run_daily(enviar_reporte_0910, time=time_0910, days=todos_los_dias, job_kwargs=config_tolerancia)
     app.job_queue.run_daily(enviar_reporte_1200, time=time_1200, days=todos_los_dias, job_kwargs=config_tolerancia)
 
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, monitor_mensajes))
