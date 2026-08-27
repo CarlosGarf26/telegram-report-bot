@@ -11,12 +11,16 @@ from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTyp
 # 1. Configuración de Logs para monitoreo en la terminal
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-# 2. Constantes de Configuración
-BOT_TOKEN = "8971854974:AAHvM7H08E3E23Df_hn-jo7MyGM_RMbahwQ"
+# 2. Constantes de Configuración (Lectura segura desde Render)
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 ZONA_HORARIA = pytz.timezone('America/Mexico_City')
 
-# LISTA DE GRUPOS AUTORIZADOS (12 IDs actualizados)
-GRUPOS_REPORTE_IDS = [-1003967031204, -804848077, -1526410573, -5121107658, -4967561577, -4021483068, -4066598135, -867815276, -5126666888, -5173573157, -1775181484, -5504914564, -1895852913] 
+# LISTA DE GRUPOS AUTORIZADOS (13 IDs actualizados)
+GRUPOS_REPORTE_IDS = [
+    -1003967031204, -804848077, -1526410573, -5121107658, 
+    -4967561577, -4021483068, -4066598135, -867815276, 
+    -5126666888, -5173573157, -1775181484, -5504914564, -1895852913
+] 
 
 # ID ESPECIAL CON LÍMITE DE UN ENVÍO AL DÍA
 ID_LIMITADO = -4030049034
@@ -124,7 +128,7 @@ async def monitor_mensajes(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ==========================================
 async def enviar_reporte_0900(context: ContextTypes.DEFAULT_TYPE):
     dia_actual = datetime.datetime.now(ZONA_HORARIA).weekday()
-    if dia_actual > 4: # 0=Lunes, 4=Viernes, 5=Sábado, 6=Domingo
+    if dia_actual > 4:  # 0=Lunes, 4=Viernes, 5=Sábado, 6=Domingo
         logging.info("🛡️ Candado activado: Bloqueando envío por ser fin de semana en CDMX.")
         return
 
@@ -180,6 +184,10 @@ async def enviar_reporte_1200(context: ContextTypes.DEFAULT_TYPE):
 # FUNCIÓN PRINCIPAL DE ARRANQUE
 # ==========================================
 def main():
+    if not BOT_TOKEN:
+        logging.error("❌ ERROR CRÍTICO: No se encontró la variable de entorno BOT_TOKEN.")
+        return
+
     hilo_web = threading.Thread(target=arrancar_servidor_web, daemon=True)
     hilo_web.start()
 
@@ -188,7 +196,7 @@ def main():
 
     todos_los_dias = (0, 1, 2, 3, 4, 5, 6)
     
-    # HORARIOS OFICIALES RESTABLECIDOS (09:00, 09:10, 12:00)
+    # Horarios oficiales restablecidos (09:00, 09:10, 12:00)
     time_0900 = datetime.time(hour=9, minute=0, second=0)
     time_0910 = datetime.time(hour=9, minute=10, second=0)
     time_1200 = datetime.time(hour=12, minute=0, second=0)
