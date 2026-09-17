@@ -15,12 +15,13 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 ZONA_HORARIA = pytz.timezone('America/Mexico_City')
 
-# LISTA DE GRUPOS AUTORIZADOS (13 IDs actualizados)
+# LISTA DE GRUPOS AUTORIZADOS (10 IDs VÁLIDOS ACTIVOS)
+# (Se removieron los obsoletos: -1526410573, -1775181484, -1895852913)
 GRUPOS_REPORTE_IDS = [
-    -1003967031204, -804848077, -1526410573, -5121107658, 
+    -1003967031204, -804848077, -5121107658, 
     -4967561577, -4021483068, -4066598135, -867815276, 
-    -5126666888, -5173573157, -1775181484, -5504914564, -1895852913
-] 
+    -5126666888, -5173573157, -5504914564
+]
 
 # ID ESPECIAL CON LÍMITE DE UN ENVÍO AL DÍA
 ID_LIMITADO = -4030049034
@@ -70,14 +71,17 @@ DICCIONARIO_FRASES = {
 }
 
 # ==========================================
-# CLASE DEL SERVIDOR WEB MODERNO
+# CLASE DEL SERVIDOR WEB MODERNO Y RESISTENTE
 # ==========================================
 class HandlerBajoConsumo(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-type", "text/html; charset=utf-8")
-        self.end_headers()
-        self.wfile.write(b"Bot activo en segundo plano de forma exitosa.")
+        try:
+            self.send_response(200)
+            self.send_header("Content-type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(b"Bot activo en segundo plano de forma exitosa.")
+        except Exception:
+            pass
 
     def log_message(self, format, *args):
         return
