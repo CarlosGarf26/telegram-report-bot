@@ -15,8 +15,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 ZONA_HORARIA = pytz.timezone('America/Mexico_City')
 
-# LISTA DE GRUPOS AUTORIZADOS (10 IDs VÁLIDOS ACTIVOS)
-# (Se removieron los obsoletos: -1526410573, -1775181484, -1895852913)
+# LISTA DE GRUPOS AUTORIZADOS (11 IDs VÁLIDOS ACTIVOS)
 GRUPOS_REPORTE_IDS = [
     -1003967031204, -804848077, -5121107658, 
     -4967561577, -4021483068, -4066598135, -867815276, 
@@ -136,14 +135,22 @@ async def enviar_reporte_0900(context: ContextTypes.DEFAULT_TYPE):
         logging.info("🛡️ Candado activado: Bloqueando envío por ser fin de semana en CDMX.")
         return
 
+    # Lista de imágenes a enviar en el bloque de las 09:00 AM
+    imagenes_0900 = [
+        "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_1_2026-07-02_12-06-49.jpg",
+        "https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/774b822b5793bb0a37f7420dc2e1b51274516ae9/photo_2026-11-05_10-40-07.jpg"
+    ]
+
     for chat_id_actual in GRUPOS_REPORTE_IDS:
         try:
-            await context.bot.send_photo(
-                chat_id=chat_id_actual,
-                photo="https://raw.githubusercontent.com/CarlosGarf26/bot-telegram-assets/main/photo_1_2026-07-02_12-06-49.jpg",
-                caption="📢 **Que tengas un excelente turno**",
-                parse_mode="Markdown"
-            )
+            for url_img in imagenes_0900:
+                await context.bot.send_photo(
+                    chat_id=chat_id_actual,
+                    photo=url_img,
+                    caption="📢 **Que tengas un excelente turno**",
+                    parse_mode="Markdown"
+                )
+                await asyncio.sleep(1.0)
             await asyncio.sleep(1.5)
         except Exception as e:
             logging.error(f"❌ ERROR EN GRUPO {chat_id_actual}: {e}")
